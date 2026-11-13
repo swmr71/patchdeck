@@ -1,0 +1,81 @@
+# PatchDeck 設定
+# 変更したらコンテナを再起動すると反映されます (docker compose restart app)
+
+# ---------------------------------------------------------------- 管理対象
+# ip を省略すると clusters-prj の規則 (10.2.<VMIDの百の位以上>.<下2桁>) で自動計算します。port も指定可(既定 22)。
+# 止めているもの・archived は入れていません。対象から外したいときは enabled: false か行ごと削除。
+targets:
+  - { vmid: 101, name: NextCloud }
+  - { vmid: 102, name: Web-Front1 }
+  - { vmid: 103, name: Github }
+  - { vmid: 104, name: Logs }
+  - { vmid: 105, name: Web-1 }
+  - { vmid: 106, name: DNS }
+  - { vmid: 107, name: DDNS }
+  - { vmid: 109, name: MS-R2 }
+  - { vmid: 111, name: DiscordBots }
+  - { vmid: 113, name: Paperless }
+  - { vmid: 121, name: Samba-Server }
+  - { vmid: 127, name: MS-KV }
+  - { vmid: 128, name: MS-K1, enabled: false }   # 外部クラスタ上・現在接続不可
+  - { vmid: 129, name: MS-K2 }
+  - { vmid: 130, name: MS-K3 }
+  - { vmid: 201, name: DockerV }
+  # - { vmid: 202, name: dwev }
+
+# ---------------------------------------------------------------- 監視するソフト
+# packages: このパターン(ワイルドカード可)に一致するパッケージをひとまとめに扱います。
+#           「Apache を更新」すると、一致する更新可能パッケージ(apache2, apache2-bin …)をまとめて上げます。
+#           画面に出すバージョンは、先頭のパターンに一致するパッケージのものです。
+# service:  状態を表示する systemd ユニット。"$pkg" なら一致したパッケージ名をそのまま使います(php8.2-fpm など)。
+watch:
+  - name: Apache
+    packages: ["apache2", "apache2-*", "libapache2-mod-*"]
+    service: apache2
+  - name: Nginx
+    packages: ["nginx", "nginx-*", "libnginx-mod-*"]
+    service: nginx
+  - name: MariaDB
+    packages: ["mariadb-server", "mariadb-*", "libmariadb3"]
+    service: mariadb
+  - name: MySQL
+    packages: ["mysql-server", "mysql-server-*", "mysql-client*"]
+    service: mysql
+  - name: PostgreSQL
+    packages: ["postgresql-[0-9]*", "postgresql", "postgresql-client-*"]
+    service: postgresql
+  - name: PHP-FPM
+    packages: ["php*-fpm"]
+    service: $pkg
+  - name: PHP
+    packages: ["php[0-9]*-cli", "php[0-9]*-common", "php[0-9]*-*", "php-*"]
+  - name: OpenSSH
+    packages: ["openssh-server", "openssh-client", "openssh-sftp-server"]
+    service: ssh
+  - name: OpenSSL
+    packages: ["openssl", "libssl3*", "libssl1.1"]
+  - name: Docker
+    packages: ["docker-ce", "docker-ce-*", "docker.io", "containerd.io", "docker-compose-plugin", "docker-buildx-plugin"]
+    service: docker
+  - name: Samba
+    packages: ["samba", "samba-*", "smbclient"]
+    service: smbd
+  - name: Redis
+    packages: ["redis-server", "redis-tools"]
+    service: redis-server
+  - name: Node.js
+    packages: ["nodejs"]
+  - name: Java
+    packages: ["openjdk-*-jre-headless", "openjdk-*-jdk-headless", "openjdk-*", "temurin-*"]
+  - name: cloudflared
+    packages: ["cloudflared"]
+    service: cloudflared
+  - name: Grafana Alloy
+    packages: ["alloy"]
+    service: alloy
+
+# ---------------------------------------------------------------- Docker
+docker:
+  # true: スキャン時に docker pull して新しいイメージがあるか確かめます(稼働中のコンテナは止まりません)
+  # false: pull せず、手元にあるイメージとだけ比べます
+  check_with_pull: true

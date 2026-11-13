@@ -1,0 +1,54 @@
+# Portainer の「Stacks → Add stack → Web editor」に貼り付けて使うスタックです。
+# 下の「Environment variables」に DB_PASSWORD などを入れてください(README 参照)。
+#
+# 事前に 201 で次を用意しておきます:
+#   mkdir -p /opt/patchdeck/ssh /opt/patchdeck/config
+#   cp <各CTに入れる root の秘密鍵> /opt/patchdeck/ssh/id_ed25519
+#   chmod 700 /opt/patchdeck/ssh && chmod 600 /opt/patchdeck/ssh/id_ed25519
+# config/settings.yaml は初回起動時にひな形が自動で置かれます。
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: patchdeck
+      MARIADB_USER: patchdeck
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      TZ: Asia/Tokyo
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ghcr.io/swmr71/patchdeck:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://patchdeck:${DB_PASSWORD}@db/patchdeck?charset=utf8mb4
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      DISCORD_MENTION_USER_ID: ${DISCORD_MENTION_USER_ID:-}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-clusters-prj.cloudflareaccess.com}
+      BASE_URL: ${BASE_URL:-https://patchdeck.clusters-prj.com}
+      SSH_USER: ${SSH_USER:-root}
+      SCAN_INTERVAL_HOURS: ${SCAN_INTERVAL_HOURS:-6}
+      MAX_PARALLEL: ${MAX_PARALLEL:-3}
+      KEYSCAN_ON_STARTUP: ${KEYSCAN_ON_STARTUP:-true}
+      # Portainer のスタック名をここに。PatchDeck 自身のコンテナを画面から更新しないための目印
+      SELF_COMPOSE_PROJECT: ${SELF_COMPOSE_PROJECT:-patchdeck}
+    volumes:
+      - /opt/patchdeck/config:/config
+      - /opt/patchdeck/ssh:/ssh
+    ports:
+      - "8800:8800"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db:

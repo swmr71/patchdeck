@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PatchDeck — clusters-prj</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">◆</span> PatchDeck <small>clusters-prj</small></div>
+  <nav>
+    <button data-tab="hosts" class="active">ホスト</button>
+    <button data-tab="groups">ソフト別</button>
+    <button data-tab="packages">パッケージ</button>
+    <button data-tab="docker">Docker</button>
+    <button data-tab="jobs">ジョブ <span id="job-badge" class="badge hidden"></span></button>
+  </nav>
+  <div class="meta" id="meta"></div>
+</header>
+
+<main>
+  <!-- ホスト -->
+  <section id="tab-hosts" class="tab active">
+    <div class="toolbar">
+      <label class="chk"><input type="checkbox" id="hosts-all"> 全選択</label>
+      <button id="btn-scan-sel">選択をスキャン</button>
+      <button id="btn-scan-all" class="primary">全部スキャン</button>
+      <span class="spacer"></span>
+      <button id="btn-full-sel" class="danger">選択を丸ごと更新 (apt upgrade)</button>
+    </div>
+    <div class="table-wrap">
+      <table class="hosts">
+        <thead><tr>
+          <th></th><th>VMID</th><th>名前</th><th>OS</th><th>更新</th><th>セキュリティ</th>
+          <th>サービス</th><th>Docker</th><th>最終スキャン</th>
+        </tr></thead>
+        <tbody id="hosts-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ソフト別 -->
+  <section id="tab-groups" class="tab">
+    <p class="hint">Apache・Nginx などのソフトごとに、どのコンテナでどのバージョンが動いているかの一覧です。チェックしたホストだけまとめて更新できます。</p>
+    <label class="chk"><input type="checkbox" id="groups-only-outdated" checked> 更新があるソフトだけ表示</label>
+    <div id="groups-body" class="cards"></div>
+  </section>
+
+  <!-- パッケージ -->
+  <section id="tab-packages" class="tab">
+    <div class="toolbar">
+      <input type="search" id="pkg-filter" placeholder="パッケージ名で絞り込み">
+      <label class="chk"><input type="checkbox" id="pkg-sec-only"> セキュリティ更新のみ</label>
+      <span class="spacer"></span>
+      <button id="btn-pkg-update" class="danger">選択パッケージを更新</button>
+    </div>
+    <p class="hint">チェックしたパッケージを、それが更新可能になっている全ホストで更新します。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th><input type="checkbox" id="pkg-all"></th><th>パッケージ</th><th>ソフト</th><th>ホスト</th></tr></thead>
+        <tbody id="pkg-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Docker -->
+  <section id="tab-docker" class="tab">
+    <div class="toolbar">
+      <label class="chk"><input type="checkbox" id="docker-only-upd"> 更新ありのみ</label>
+      <span class="spacer"></span>
+      <button id="btn-docker-update" class="danger">選択を更新 (pull &amp; up -d)</button>
+    </div>
+    <p class="hint">docker compose で起動しているコンテナのみ更新できます。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>ホスト</th><th>コンテナ</th><th>イメージ</th><th>compose</th><th>状態</th></tr></thead>
+        <tbody id="docker-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ジョブ -->
+  <section id="tab-jobs" class="tab">
+    <div class="jobs-layout">
+      <ul id="jobs-list" class="jobs-list"></ul>
+      <div class="job-view">
+        <h3 id="job-title">ジョブを選んでください</h3>
+        <div id="job-meta" class="muted"></div>
+        <pre id="job-summary" class="summary"></pre>
+        <pre id="job-log" class="log"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<dialog id="detail">
+  <form method="dialog"><button class="close">×</button></form>
+  <h3 id="detail-title"></h3>
+  <div id="detail-body"></div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

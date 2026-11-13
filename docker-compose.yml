@@ -1,0 +1,38 @@
+name: patchdeck
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: patchdeck
+      MARIADB_USER: patchdeck
+      MARIADB_PASSWORD: ${DB_PASSWORD:?.env に DB_PASSWORD を設定してください}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      TZ: Asia/Tokyo
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql+pymysql://patchdeck:${DB_PASSWORD}@db/patchdeck?charset=utf8mb4
+      TZ: Asia/Tokyo
+    volumes:
+      - ./config:/config
+      - ./ssh:/ssh            # id_ed25519 と known_hosts を置く
+    ports:
+      - "8800:8800"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db:
