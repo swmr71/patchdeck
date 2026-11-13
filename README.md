@@ -79,6 +79,23 @@ docker compose logs -f app
 
 `CF_ACCESS_AUD` を入れると、Cloudflare Access の JWT が無いリクエストは全部 401/403 になります(LAN から直接 `:8800` を開いても弾かれます)。**root で全サーバーを触れるツールなので、公開する前に必ず設定してください。** ジョブには Access のメールアドレスが「実行者」として記録されます。
 
+## 専用の SSH 鍵に切り替える(推奨)
+
+自分用の鍵を DockerV に置いたままにしないために、PatchDeck 専用の鍵を作り、`from=` で DockerV からしか使えないようにします。
+
+```bash
+# 201: 専用の鍵を作る
+sudo ssh-keygen -t ed25519 -N '' -C patchdeck -f /opt/patchdeck/ssh/id_patchdeck
+sudo cat /opt/patchdeck/ssh/id_patchdeck.pub
+
+# 各 Proxmox ノード(dell / NEC / surpro)で: 公開鍵を、そのノード上の CT に配る
+curl -fsSLo /tmp/install-key.sh https://raw.githubusercontent.com/swmr71/patchdeck/main/scripts/install-key.sh
+bash /tmp/install-key.sh "ssh-ed25519 AAAA... patchdeck"
+```
+
+`pct exec` で書き込むので、ファイアウォールで 22 番が閉じていても使えます。`--remove` を付けると鍵を消せます。
+配ったあとは `id_patchdeck` を `id_ed25519` に置き換えて app を再起動し、元の鍵は DockerV から `shred -u` で消します。
+
 ## 設定
 
 ### 対象ホストを増やす・外す
